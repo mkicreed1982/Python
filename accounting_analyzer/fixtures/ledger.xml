@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Worksheet ss:Name="Ledger"><Table>
+<Row><Cell><Data ss:Type="String">Date</Data></Cell><Cell><Data ss:Type="String">Description</Data></Cell><Cell><Data ss:Type="String">Category</Data></Cell><Cell><Data ss:Type="String">Amount</Data></Cell><Cell><Data ss:Type="String">Balance</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-05T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Office rent January</Data></Cell><Cell><Data ss:Type="String">Rent</Data></Cell><Cell><Data ss:Type="Number">-500.0</Data></Cell><Cell><Data ss:Type="Number">9500.0</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-06T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Warehouse rent January</Data></Cell><Cell><Data ss:Type="String">Rent</Data></Cell><Cell><Data ss:Type="Number">-500.0</Data></Cell><Cell><Data ss:Type="Number">9000.0</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-08T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Client invoice #101</Data></Cell><Cell><Data ss:Type="String">Sales</Data></Cell><Cell><Data ss:Type="Number">1250.75</Data></Cell><Cell><Data ss:Type="Number">10250.75</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-10T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Client invoice #102</Data></Cell><Cell><Data ss:Type="String">Sales</Data></Cell><Cell><Data ss:Type="Number">1250.75</Data></Cell><Cell><Data ss:Type="Number">11501.5</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-12T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Stationery order</Data></Cell><Cell><Data ss:Type="String">Supplies</Data></Cell><Cell><Data ss:Type="Number">-89.99</Data></Cell><Cell><Data ss:Type="Number">11411.51</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-15T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Electricity bill</Data></Cell><Cell><Data ss:Type="String">Utilities</Data></Cell><Cell><Data ss:Type="Number">-142.5</Data></Cell><Cell><Data ss:Type="Number">11269.01</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-18T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Client invoice #103</Data></Cell><Cell><Data ss:Type="String">Sales</Data></Cell><Cell><Data ss:Type="Number">2400.0</Data></Cell><Cell><Data ss:Type="Number">13669.01</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-20T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Software subscription</Data></Cell><Cell><Data ss:Type="String">Supplies</Data></Cell><Cell><Data ss:Type="Number">-49.0</Data></Cell><Cell><Data ss:Type="Number">13620.01</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-22T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Salaries January</Data></Cell><Cell><Data ss:Type="String">Salaries</Data></Cell><Cell><Data ss:Type="Number">-3200.0</Data></Cell><Cell><Data ss:Type="Number">10420.01</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-25T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Client invoice #104</Data></Cell><Cell><Data ss:Type="String">Sales</Data></Cell><Cell><Data ss:Type="Number">980.25</Data></Cell><Cell><Data ss:Type="Number">11400.26</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-27T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Internet bill</Data></Cell><Cell><Data ss:Type="String">Utilities</Data></Cell><Cell><Data ss:Type="Number">-59.9</Data></Cell><Cell><Data ss:Type="Number">11340.36</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-29T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Client contract #105</Data></Cell><Cell><Data ss:Type="String">Sales</Data></Cell><Cell><Data ss:Type="Number">50000.0</Data></Cell><Cell><Data ss:Type="Number">61340.36</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-30T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Bank fees</Data></Cell><Cell><Data ss:Type="String">Fees</Data></Cell><Cell><Data ss:Type="Number">-25.0</Data></Cell><Cell><Data ss:Type="Number">61315.36</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-31T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">Client invoice #106</Data></Cell><Cell><Data ss:Type="String">Sales</Data></Cell><Cell><Data ss:Type="Number">310.4</Data></Cell><Cell><Data ss:Type="Number">61625.76</Data></Cell></Row>
+</Table></Worksheet>
+<Worksheet ss:Name="Bank"><Table>
+<Row><Cell><Data ss:Type="String">Date</Data></Cell><Cell><Data ss:Type="String">Reference</Data></Cell><Cell><Data ss:Type="String">Amount</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-05T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">SEPA-99011</Data></Cell><Cell><Data ss:Type="Number">-500.0</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-08T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">TRN-10101</Data></Cell><Cell><Data ss:Type="Number">1250.75</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-10T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">TRN-10102</Data></Cell><Cell><Data ss:Type="Number">1250.75</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-18T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">TRN-10103</Data></Cell><Cell><Data ss:Type="Number">2400.0</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-22T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">PAY-55010</Data></Cell><Cell><Data ss:Type="Number">-3200.0</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-25T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">TRN-10104</Data></Cell><Cell><Data ss:Type="Number">980.25</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-15T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">DD-77123</Data></Cell><Cell><Data ss:Type="Number">-142.5</Data></Cell></Row>
+<Row><Cell><Data ss:Type="DateTime">2025-01-28T00:00:00.000</Data></Cell><Cell><Data ss:Type="String">FEE-00021</Data></Cell><Cell><Data ss:Type="Number">-12.0</Data></Cell></Row>
+</Table></Worksheet>
+<Worksheet ss:Name="PnL"><Table>
+<Row><Cell><Data ss:Type="String">Month</Data></Cell><Cell><Data ss:Type="String">Revenue</Data></Cell><Cell><Data ss:Type="String">Expenses</Data></Cell></Row>
+<Row><Cell><Data ss:Type="String">January</Data></Cell><Cell><Data ss:Type="Number">56192.15</Data></Cell><Cell><Data ss:Type="Number">4566.39</Data></Cell></Row>
+<Row><Cell><Data ss:Type="String">February</Data></Cell><Cell><Data ss:Type="Number">43210.0</Data></Cell><Cell><Data ss:Type="Number">5120.1</Data></Cell></Row>
+<Row><Cell><Data ss:Type="String">March</Data></Cell><Cell><Data ss:Type="Number">47990.5</Data></Cell><Cell><Data ss:Type="Number">4890.75</Data></Cell></Row>
+</Table></Worksheet>
+</Workbook>
