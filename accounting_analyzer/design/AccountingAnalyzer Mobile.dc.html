@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0d0d1f;font-family:'Sora',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#e94560;text-decoration:none}a:hover{color:#ff6b81}
+::-webkit-scrollbar{width:0;height:0}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes barGrow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes drawLine{from{stroke-dashoffset:600}to{stroke-dashoffset:0}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:32px 16px;background:radial-gradient(1200px 600px at 50% -10%, #16213e 0%, #0d0d1f 60%)">
+<div style="width:390px;height:844px;background:#1a1a2e;border-radius:24px;overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.5);border:1px solid #2d3561">
+
+  <!-- ============ ONBOARDING ============ -->
+  <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;display:flex;flex-direction:column;padding:0 28px;background:linear-gradient(180deg,#16213e 0%,#1a1a2e 55%)" data-screen-label="Onboarding">
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:28px">
+        <div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#e94560,#533483);display:flex;align-items:center;justify-content:center;animation:fadeUp .5s ease both">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M4 19V10M10 19V5M16 19v-8M21 19H3"></path></svg>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;animation:fadeUp .5s .1s ease both">
+          <div style="font-size:34px;font-weight:800;color:#fff;line-height:1.15;letter-spacing:-.5px">Accounting<br>Analyzer</div>
+          <div style="font-size:15px;color:#a0a0b0;line-height:1.55">Your Excel analysis engine, now in your pocket. Statements, reconciliation, anomalies &amp; reports — offline.</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;animation:fadeUp .5s .2s ease both">
+          <sc-for list="{{ onboardFeatures }}" as="f" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:rgba(255,255,255,.04);border:1px solid #2d3561;border-radius:14px">
+              <div style="width:34px;height:34px;border-radius:10px;background:{{ f.bg }};display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;font-weight:700;font-family:'IBM Plex Mono',monospace">{{ f.icon }}</div>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <div style="font-size:13.5px;font-weight:600;color:#fff">{{ f.title }}</div>
+                <div style="font-size:11.5px;color:#a0a0b0">{{ f.sub }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="padding:20px 0 36px;display:flex;flex-direction:column;gap:14px;animation:fadeUp .5s .3s ease both">
+        <button onClick="{{ finishOnboarding }}" style="height:54px;border:none;border-radius:16px;background:linear-gradient(135deg,#e94560,#c73652);color:#fff;font-size:16px;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(233,69,96,.35)">Get started</button>
+        <div style="text-align:center;font-size:12px;color:#6b6b80">100% offline · your data never leaves the device</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ MAIN APP ============ -->
+  <sc-if value="{{ isApp }}" hint-placeholder-val="{{ false }}">
+    <!-- Header -->
+    <div style="padding:22px 20px 14px;display:flex;align-items:center;justify-content:space-between;flex:none">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="font-size:11px;color:#a0a0b0;text-transform:uppercase;letter-spacing:1.2px;font-weight:600">{{ headerKicker }}</div>
+        <div style="font-size:21px;font-weight:800;color:#fff;letter-spacing:-.3px">{{ headerTitle }}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <sc-if value="{{ showBack }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ goDashboard }}" style="height:36px;padding:0 14px;border-radius:12px;border:1px solid #2d3561;background:rgba(255,255,255,.04);color:#a0a0b0;font-size:12px;font-weight:600;font-family:'Sora',sans-serif;cursor:pointer">Close</button>
+        </sc-if>
+        <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#533483,#e94560);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">SL</div>
+      </div>
+    </div>
+
+    <!-- Scrollable body -->
+    <div style="flex:1;overflow-y:auto;padding:4px 20px 100px;display:flex;flex-direction:column;gap:16px">
+
+      <!-- ===== DASHBOARD ===== -->
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:16px" data-screen-label="Dashboard">
+          <!-- File chip -->
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:#0f3460;border-radius:16px;border:1px solid #2d3561">
+            <div style="width:38px;height:38px;border-radius:11px;background:rgba(0,184,148,.15);display:flex;align-items:center;justify-content:center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00b894" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:1px">
+              <div style="font-size:13px;font-weight:600;color:#fff">{{ fileName }}</div>
+              <div style="font-size:11px;color:#a0a0b0">{{ fileMeta }}</div>
+            </div>
+            <button onClick="{{ goImport }}" style="height:32px;padding:0 12px;border-radius:10px;border:none;background:rgba(233,69,96,.15);color:#e94560;font-size:11.5px;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer">Change</button>
+          </div>
+          <!-- Net position hero -->
+          <div style="padding:20px;background:linear-gradient(135deg,#0f3460 0%,#16213e 100%);border-radius:20px;border:1px solid #2d3561;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:12px;color:#a0a0b0;font-weight:600">Net result · FY 2025</div>
+              <div style="padding:4px 10px;border-radius:8px;background:rgba(0,184,148,.15);color:#00b894;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace">+12.4%</div>
+            </div>
+            <div style="font-size:36px;font-weight:800;color:#fff;font-family:'IBM Plex Mono',monospace;letter-spacing:-1px">{{ netResult }}</div>
+            <svg viewBox="0 0 320 70" style="width:100%;height:70px;display:block">
+              <defs><linearGradient id="heroFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e94560" stop-opacity=".35"></stop><stop offset="100%" stop-color="#e94560" stop-opacity="0"></stop></linearGradient></defs>
+              <path d="M0,55 C30,50 45,58 70,44 C95,30 115,42 140,34 C165,26 185,38 210,24 C235,12 260,22 285,14 C300,9 310,10 320,8 L320,70 L0,70 Z" fill="url(#heroFill)"></path>
+              <path d="M0,55 C30,50 45,58 70,44 C95,30 115,42 140,34 C165,26 185,38 210,24 C235,12 260,22 285,14 C300,9 310,10 320,8" fill="none" stroke="#e94560" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="600" style="animation:drawLine 1.4s ease both"></path>
+            </svg>
+            <div style="display:flex;gap:0;border-top:1px solid #2d3561;padding-top:14px">
+              <div style="flex:1;display:flex;flex-direction:column;gap:3px"><div style="font-size:10.5px;color:#a0a0b0;text-transform:uppercase;letter-spacing:.8px">Revenue</div><div style="font-size:15px;font-weight:700;color:#00b894;font-family:'IBM Plex Mono',monospace">{{ kpiRevenue }}</div></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:3px;border-left:1px solid #2d3561;padding-left:16px"><div style="font-size:10.5px;color:#a0a0b0;text-transform:uppercase;letter-spacing:.8px">Expenses</div><div style="font-size:15px;font-weight:700;color:#e17055;font-family:'IBM Plex Mono',monospace">{{ kpiExpenses }}</div></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:3px;border-left:1px solid #2d3561;padding-left:16px"><div style="font-size:10.5px;color:#a0a0b0;text-transform:uppercase;letter-spacing:.8px">Margin</div><div style="font-size:15px;font-weight:700;color:#fdcb6e;font-family:'IBM Plex Mono',monospace">{{ kpiMargin }}</div></div>
+            </div>
+          </div>
+          <!-- Alert strip -->
+          <button onClick="{{ goAnomalies }}" style="display:flex;align-items:center;gap:12px;padding:13px 16px;background:rgba(253,203,110,.08);border:1px solid rgba(253,203,110,.35);border-radius:16px;cursor:pointer;text-align:left;font-family:'Sora',sans-serif">
+            <div style="width:10px;height:10px;border-radius:50%;background:#fdcb6e;animation:pulse 1.8s infinite;flex:none"></div>
+            <div style="flex:1;font-size:12.5px;color:#fdcb6e;font-weight:600">{{ anomalyCount }} anomalies detected in General Ledger</div>
+            <div style="color:#fdcb6e;font-size:16px">›</div>
+          </button>
+          <!-- Analysis tools grid -->
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:13px;font-weight:700;color:#fff">Analysis tools</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <sc-for list="{{ tools }}" as="t" hint-placeholder-count="6">
+                <button onClick="{{ t.go }}" style="display:flex;flex-direction:column;gap:10px;padding:16px;background:#16213e;border:1px solid #2d3561;border-radius:16px;cursor:pointer;text-align:left;font-family:'Sora',sans-serif">
+                  <div style="width:36px;height:36px;border-radius:11px;background:{{ t.bg }};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace">{{ t.icon }}</div>
+                  <div style="display:flex;flex-direction:column;gap:2px">
+                    <div style="font-size:13px;font-weight:700;color:#fff">{{ t.title }}</div>
+                    <div style="font-size:11px;color:#a0a0b0;line-height:1.4">{{ t.sub }}</div>
+                  </div>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          <!-- Recent transactions -->
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:13px;font-weight:700;color:#fff">Recent entries</div>
+              <button onClick="{{ goData }}" style="border:none;background:none;color:#e94560;font-size:12px;font-weight:600;font-family:'Sora',sans-serif;cursor:pointer">View all</button>
+            </div>
+            <div style="display:flex;flex-direction:column;background:#16213e;border:1px solid #2d3561;border-radius:16px;overflow:hidden">
+              <sc-for list="{{ recentTx }}" as="tx" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid rgba(45,53,97,.5)">
+                  <div style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#a0a0b0;font-family:'IBM Plex Mono',monospace">{{ tx.acct }}</div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:1px">
+                    <div style="font-size:12.5px;font-weight:600;color:#fff">{{ tx.label }}</div>
+                    <div style="font-size:10.5px;color:#a0a0b0">{{ tx.date }} · {{ tx.journal }}</div>
+                  </div>
+                  <div style="font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:{{ tx.color }}">{{ tx.amount }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== IMPORT / DATA ===== -->
+      <sc-if value="{{ isImport }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px" data-screen-label="Import">
+          <button onClick="{{ pickFile }}" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:34px 20px;background:rgba(233,69,96,.05);border:1.5px dashed rgba(233,69,96,.5);border-radius:20px;cursor:pointer;font-family:'Sora',sans-serif">
+            <div style="width:52px;height:52px;border-radius:16px;background:rgba(233,69,96,.15);display:flex;align-items:center;justify-content:center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e94560" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 8l5-5 5 5M4 21h16"></path></svg>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:3px;align-items:center">
+              <div style="font-size:14.5px;font-weight:700;color:#fff">Import Excel file</div>
+              <div style="font-size:11.5px;color:#a0a0b0">.xlsx · .xlsm — parsed on device</div>
+            </div>
+          </button>
+          <div style="font-size:13px;font-weight:700;color:#fff">Loaded workbook</div>
+          <div style="display:flex;flex-direction:column;background:#16213e;border:1px solid #2d3561;border-radius:16px;overflow:hidden">
+            <sc-for list="{{ sheets }}" as="s" hint-placeholder-count="4">
+              <button onClick="{{ s.select }}" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border:none;border-bottom:1px solid rgba(45,53,97,.5);background:{{ s.rowBg }};cursor:pointer;text-align:left;font-family:'Sora',sans-serif">
+                <div style="width:34px;height:34px;border-radius:10px;background:rgba(0,184,148,.12);display:flex;align-items:center;justify-content:center;font-size:13px;color:#00b894;font-weight:700;font-family:'IBM Plex Mono',monospace">⊞</div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:1px">
+                  <div style="font-size:13px;font-weight:600;color:#fff">{{ s.name }}</div>
+                  <div style="font-size:11px;color:#a0a0b0">{{ s.rows }} rows · {{ s.cols }} columns</div>
+                </div>
+                <sc-if value="{{ s.active }}" hint-placeholder-val="{{ false }}"><div style="padding:3px 9px;border-radius:7px;background:rgba(233,69,96,.15);color:#e94560;font-size:10px;font-weight:700">ACTIVE</div></sc-if>
+              </button>
+            </sc-for>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#fff">Preview — {{ activeSheetName }}</div>
+          <div style="background:#16213e;border:1px solid #2d3561;border-radius:16px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:64px 1fr 84px;padding:10px 14px;background:#0f3460;gap:8px">
+              <div style="font-size:10px;font-weight:700;color:#a0a0b0;text-transform:uppercase;letter-spacing:.8px">Acct</div>
+              <div style="font-size:10px;font-weight:700;color:#a0a0b0;text-transform:uppercase;letter-spacing:.8px">Label</div>
+              <div style="font-size:10px;font-weight:700;color:#a0a0b0;text-transform:uppercase;letter-spacing:.8px;text-align:right">Amount</div>
+            </div>
+            <sc-for list="{{ previewRows }}" as="r" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:64px 1fr 84px;padding:11px 14px;gap:8px;border-bottom:1px solid rgba(45,53,97,.4)">
+                <div style="font-size:11px;color:#a0a0b0;font-family:'IBM Plex Mono',monospace">{{ r.acct }}</div>
+                <div style="font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.label }}</div>
+                <div style="font-size:11.5px;color:{{ r.color }};font-family:'IBM Plex Mono',monospace;text-align:right;font-weight:600">{{ r.amount }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== STATEMENTS ===== -->
+      <sc-if value="{{ isStatements }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px" data-screen-label="Statements">
+          <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px">
+            <sc-for list="{{ stmtTabs }}" as="tab" hint-placeholder-count="5">
+              <button onClick="{{ tab.select }}" style="flex:none;height:36px;padding:0 15px;border-radius:11px;border:1px solid {{ tab.border }};background:{{ tab.bg }};color:{{ tab.color }};font-size:12px;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer;white-space:nowrap">{{ tab.label }}</button>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;background:#16213e;border:1px solid #2d3561;border-radius:16px;overflow:hidden">
+            <div style="padding:14px 16px;background:#0f3460;display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:13px;font-weight:700;color:#fff">{{ stmtTitle }}</div>
+              <div style="font-size:10.5px;color:#a0a0b0;font-family:'IBM Plex Mono',monospace">FY 2025</div>
+            </div>
+            <sc-for list="{{ stmtLines }}" as="l" hint-placeholder-count="8">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:{{ l.pad }};border-bottom:1px solid rgba(45,53,97,.4);background:{{ l.bg }}">
+                <div style="font-size:{{ l.size }};font-weight:{{ l.weight }};color:{{ l.labelColor }}">{{ l.label }}</div>
+                <div style="font-size:{{ l.size }};font-weight:{{ l.weight }};color:{{ l.valColor }};font-family:'IBM Plex Mono',monospace">{{ l.value }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:13px;font-weight:700;color:#fff">Key ratios</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <sc-for list="{{ ratios }}" as="rt" hint-placeholder-count="4">
+                <div style="padding:14px 16px;background:#16213e;border:1px solid #2d3561;border-radius:14px;display:flex;flex-direction:column;gap:4px">
+                  <div style="font-size:10.5px;color:#a0a0b0;text-transform:uppercase;letter-spacing:.6px">{{ rt.label }}</div>
+                  <div style="font-size:19px;font-weight:800;color:{{ rt.color }};font-family:'IBM Plex Mono',monospace">{{ rt.value }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== BREAKDOWN ===== -->
+      <sc-if value="{{ isBreakdown }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px" data-screen-label="Breakdown">
+          <div style="padding:20px;background:#16213e;border:1px solid #2d3561;border-radius:20px;display:flex;flex-direction:column;gap:16px">
+            <div style="font-size:13px;font-weight:700;color:#fff">Expenses by category</div>
+            <div style="display:flex;align-items:center;gap:20px">
+              <div style="position:relative;width:120px;height:120px;flex:none">
+                <svg viewBox="0 0 120 120" style="width:120px;height:120px;display:block">{{ donutSegs }}<circle cx="60" cy="60" r="34" fill="#16213e"></circle></svg>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">
+                  <div style="font-size:14px;font-weight:800;color:#fff;font-family:'IBM Plex Mono',monospace">{{ donutTotal }}</div>
+                  <div style="font-size:8px;color:#a0a0b0;letter-spacing:.8px">TOTAL</div>
+                </div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ categories }}" as="c" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div style="width:9px;height:9px;border-radius:3px;background:{{ c.color }};flex:none"></div>
+                    <div style="flex:1;font-size:11.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</div>
+                    <div style="font-size:11px;color:#a0a0b0;font-family:'IBM Plex Mono',monospace">{{ c.pct }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;background:#16213e;border:1px solid #2d3561;border-radius:16px;overflow:hidden">
+            <sc-for list="{{ categories }}" as="c" hint-placeholder-count="5">
+              <div style="display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-bottom:1px solid rgba(45,53,97,.4)">
+                <div style="display:flex;align-items:center;justify-content:space-between">
+                  <div style="font-size:12.5px;font-weight:600;color:#fff">{{ c.name }}</div>
+                  <div style="font-size:12.5px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace">{{ c.amount }}</div>
+                </div>
+                <div style="height:6px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden"><div style="height:100%;border-radius:3px;background:{{ c.color }};width:{{ c.pct }}"></div></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== RECONCILIATION ===== -->
+      <sc-if value="{{ isRecon }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px" data-screen-label="Reconciliation">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="padding:16px;background:#16213e;border:1px solid #2d3561;border-radius:16px;display:flex;flex-direction:column;gap:4px">
+              <div style="font-size:10.5px;color:#a0a0b0;text-transform:uppercase;letter-spacing:.6px">Ledger 512</div>
+              <div style="font-size:17px;font-weight:800;color:#fff;font-family:'IBM Plex Mono',monospace">{{ reconLedger }}</div>
+            </div>
+            <div style="padding:16px;background:#16213e;border:1px solid #2d3561;border-radius:16px;display:flex;flex-direction:column;gap:4px">
+              <div style="font-size:10.5px;color:#a0a0b0;text-transform:uppercase;letter-spacing:.6px">Bank stmt</div>
+              <div style="font-size:17px;font-weight:800;color:#fff;font-family:'IBM Plex Mono',monospace">{{ reconBank }}</div>
+            </div>
+          </div>
+          <div style="padding:16px;background:rgba(225,112,85,.08);border:1px solid rgba(225,112,85,.4);border-radius:16px;display:flex;align-items:center;gap:12px">
+            <div style="width:38px;height:38px;border-radius:11px;background:rgba(225,112,85,.18);display:flex;align-items:center;justify-content:center;color:#e17055;font-weight:800;font-size:16px">Δ</div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:1px">
+              <div style="font-size:12px;color:#e17055;font-weight:700">Unmatched difference</div>
+              <div style="font-size:17px;font-weight:800;color:#fff;font-family:'IBM Plex Mono',monospace">{{ reconDiff }}</div>
+            </div>
+            <div style="font-size:11px;color:#a0a0b0;font-family:'IBM Plex Mono',monospace">{{ reconRate }} matched</div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#fff">Unmatched items</div>
+          <div style="display:flex;flex-direction:column;background:#16213e;border:1px solid #2d3561;border-radius:16px;overflow:hidden">
+            <sc-for list="{{ reconItems }}" as="ri" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid rgba(45,53,97,.4)">
+                <div style="width:8px;height:8px;border-radius:50%;background:{{ ri.dotColor }};flex:none"></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:1px">
+                  <div style="font-size:12.5px;font-weight:600;color:#fff">{{ ri.label }}</div>
+                  <div style="font-size:10.5px;color:#a0a0b0">{{ ri.side }} · {{ ri.date }}</div>
+                </div>
+                <div style="font-size:12.5px;font-weight:700;color:#fff;font-family:'IBM Plex Mono',monospace">{{ ri.amount }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== ANOMALIES ===== -->
+      <sc-if value="{{ isAnomalies }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px" data-screen-label="Anomalies">
+          <div style="display:flex;align-items:center;gap:14px;padding:18px;background:#16213e;border:1px solid #2d3561;border-radius:18px">
+            <div style="position:relative;width:56px;height:56px;flex:none">
+              <svg viewBox="0 0 56 56" style="width:56px;height:56px;transform:rotate(-90deg)"><circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="5"></circle><circle cx="28" cy="28" r="24" fill="none" stroke="#fdcb6e" stroke-width="5" stroke-linecap="round" stroke-dasharray="151" stroke-dashoffset="{{ anomGaugeOffset }}"></circle></svg>
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fdcb6e;font-family:'IBM Plex Mono',monospace">{{ anomalyCount }}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <div style="font-size:14px;font-weight:700;color:#fff">Outliers beyond 2σ</div>
+              <div style="font-size:11.5px;color:#a0a0b0;line-height:1.5">Amounts deviating more than 2 standard deviations from the column mean.</div>
+            </div>
+          </div>
+          <sc-for list="{{ anomalies }}" as="a" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:15px 16px;background:#16213e;border:1px solid {{ a.border }};border-radius:16px">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="padding:3px 9px;border-radius:7px;background:{{ a.badgeBg }};color:{{ a.badgeColor }};font-size:10px;font-weight:800;letter-spacing:.5px">{{ a.severity }}</div>
+                  <div style="font-size:10.5px;color:#a0a0b0;font-family:'IBM Plex Mono',monospace">row {{ a.row }}</div>
+                </div>
+                <div style="font-size:10.5px;color:#a0a0b0;font-family:'IBM Plex Mono',monospace">{{ a.sigma }}</div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+                <div style="display:flex;flex-direction:column;gap:1px">
+                  <div style="font-size:13px;font-weight:600;color:#fff">{{ a.label }}</div>
+                  <div style="font-size:10.5px;color:#a0a0b0">{{ a.date }} · {{ a.sheet }}</div>
+                </div>
+                <div style="font-size:15px;font-weight:800;color:{{ a.badgeColor }};font-family:'IBM Plex Mono',monospace">{{ a.amount }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- ===== TRENDS ===== -->
+      <sc-if value="{{ isTrends }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px" data-screen-label="Trends">
+          <div style="padding:20px;background:#16213e;border:1px solid #2d3561;border-radius:20px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="font-size:13px;font-weight:700;color:#fff">Monthly revenue vs expenses</div>
+              <div style="font-size:10px;color:#a0a0b0;font-family:'IBM Plex Mono',monospace">2025</div>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:6px;height:140px">
+              <sc-for list="{{ trendBars }}" as="b" hint-placeholder-count="12">
+                <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;height:100%">
+                  <div style="height:{{ b.rev }};border-radius:3px 3px 0 0;background:#00b894;transform-origin:bottom;animation:barGrow .6s ease both"></div>
+                  <div style="height:{{ b.exp }};border-radius:0 0 3px 3px;background:rgba(233,69,96,.75);transform-origin:top;animation:barGrow .6s ease both"></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;justify-content:space-between">
+              <sc-for list="{{ trendLabels }}" as="m" hint-placeholder-count="12"><div style="font-size:8.5px;color:#a0a0b0;font-family:'IBM Plex Mono',monospace">{{ m.l }}</div></sc-for>
+            </div>
+            <div style="display:flex;gap:16px">
+              <div style="display:flex;align-items:center;gap:6px"><div style="width:9px;height:9px;border-radius:3px;background:#00b894"></div><div style="font-size:10.5px;color:#a0a0b0">Revenue</div></div>
+              <div style="display:flex;align-items:center;gap:6px"><div style="width:9px;height:9px;border-radius:3px;background:rgba(233,69,96,.75)"></div><div style="font-size:10.5px;color:#a0a0b0">Expenses</div></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <sc-for list="{{ trendStats }}" as="ts" hint-placeholder-count="4">
+              <div style="padding:14px 16px;background:#16213e;border:1px solid #2d3561;border-radius:14px;display:flex;flex-direction:column;gap:4px">
+                <div style="font-size:10.5px;color:#a0a0b0;text-transform:uppercase;letter-spacing:.6px">{{ ts.label }}</div>
+                <div style="font-size:17px;font-weight:800;color:{{ ts.color }};font-family:'IBM Plex Mono',monospace">{{ ts.value }}</div>
+                <div style="font-size:10.5px;color:#a0a0b0">{{ ts.sub }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ===== REPORT ===== -->
+      <sc-if value="{{ isReport }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px" data-screen-label="Report">
+          <div style="font-size:13px;font-weight:700;color:#fff">Include in report</div>
+          <div style="display:flex;flex-direction:column;background:#16213e;border:1px solid #2d3561;border-radius:16px;overflow:hidden">
+            <sc-for list="{{ reportSections }}" as="rs" hint-placeholder-count="6">
+              <button onClick="{{ rs.toggle }}" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border:none;border-bottom:1px solid rgba(45,53,97,.5);background:none;cursor:pointer;text-align:left;font-family:'Sora',sans-serif">
+                <div style="width:22px;height:22px;border-radius:7px;border:1.5px solid {{ rs.boxBorder }};background:{{ rs.boxBg }};display:flex;align-items:center;justify-content:center;flex:none">
+                  <sc-if value="{{ rs.on }}" hint-placeholder-val="{{ true }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"><path d="M4 12l5 5L20 7"></path></svg></sc-if>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:1px">
+                  <div style="font-size:13px;font-weight:600;color:#fff">{{ rs.title }}</div>
+                  <div style="font-size:10.5px;color:#a0a0b0">{{ rs.sub }}</div>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+          <div style="padding:18px;background:#0f3460;border:1px solid #2d3561;border-radius:18px;display:flex;align-items:center;gap:14px">
+            <div style="width:44px;height:56px;border-radius:6px;background:#fff;display:flex;flex-direction:column;gap:3px;padding:7px 6px;flex:none">
+              <div style="height:4px;width:60%;background:#e94560;border-radius:2px"></div>
+              <div style="height:3px;width:90%;background:#d0d0d8;border-radius:2px"></div>
+              <div style="height:3px;width:80%;background:#d0d0d8;border-radius:2px"></div>
+              <div style="height:10px;width:100%;background:#f0f0f4;border-radius:2px;margin-top:2px"></div>
+              <div style="height:3px;width:70%;background:#d0d0d8;border-radius:2px"></div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+              <div style="font-size:13.5px;font-weight:700;color:#fff">{{ reportName }}</div>
+              <div style="font-size:11px;color:#a0a0b0">{{ reportMeta }}</div>
+            </div>
+          </div>
+          <sc-if value="{{ reportDone }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:rgba(0,184,148,.1);border:1px solid rgba(0,184,148,.4);border-radius:14px">
+              <div style="width:26px;height:26px;border-radius:50%;background:#00b894;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M4 12l5 5L20 7"></path></svg></div>
+              <div style="font-size:12.5px;color:#00b894;font-weight:700">Report generated — saved to device</div>
+            </div>
+          </sc-if>
+          <button onClick="{{ generateReport }}" style="height:54px;border:none;border-radius:16px;background:linear-gradient(135deg,#e94560,#c73652);color:#fff;font-size:15px;font-weight:700;font-family:'Sora',sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(233,69,96,.3)">{{ generateLabel }}</button>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- Bottom nav -->
+    <div style="position:absolute;left:0;right:0;bottom:0;display:flex;padding:10px 8px 24px;background:rgba(15,20,45,.92);backdrop-filter:blur(12px);border-top:1px solid #2d3561">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5">
+        <button onClick="{{ n.go }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;border:none;background:none;cursor:pointer;padding:6px 0;font-family:'Sora',sans-serif">
+          <div style="width:40px;height:26px;border-radius:9px;background:{{ n.pillBg }};display:flex;align-items:center;justify-content:center;font-size:14px;color:{{ n.color }};font-weight:700;font-family:'IBM Plex Mono',monospace">{{ n.icon }}</div>
+          <div style="font-size:9.5px;font-weight:600;color:{{ n.color }}">{{ n.label }}</div>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;460&quot;,&quot;height&quot;:&quot;920&quot;},&quot;accentColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#fdcb6e&quot;,&quot;options&quot;:[&quot;#e94560&quot;,&quot;#00b894&quot;,&quot;#6c5ce7&quot;,&quot;#fdcb6e&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;currency&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;$&quot;,&quot;options&quot;:[&quot;€&quot;,&quot;$&quot;,&quot;£&quot;,&quot;MAD &quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Data&quot;}}">
+/* ============================================================
+   AccountingAnalyzer Mobile — core logic v2
+   Ported from the validated Python engine (compta_analyzer_en.py v2):
+   every analysis number on screen is COMPUTED by the engine below
+   (reconciliation with one-to-one duplicate matching, z-score
+   anomaly detection, category breakdown, financial summary,
+   monthly time series) from the demo ledger dataset, and the UI
+   session (screen, tabs, selections) is autosaved to localStorage.
+   ============================================================ */
+
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/* ---------- demo dataset (generated, not hand-tuned outputs) ---------- */
+function buildDemoData() {
+  const monthlyRev = [58,61,66,63,70,74,69,65,76,81,78,86];      // thousands
+  const monthlyExp = [42,45,44,48,46,52,50,49,54,55,57,58];      // thousands
+  const catSplit = [
+    ['Payroll',          '641', 0.42, '#e94560'],
+    ['COGS',             '607', 0.30, '#6c5ce7'],
+    ['Rent & utilities', '613', 0.10, '#00b894'],
+    ['Marketing',        '623', 0.08, '#fdcb6e'],
+    ['Other',            '628', 0.10, '#74b9ff']];
+  const ledger = [];
+  let row = 2;                                   // row 1 = headers, like the desktop app
+  monthlyRev.forEach((rev, m) => {
+    ledger.push({ row: row++, acct: '706', label: 'Service revenue — ' + MONTH_NAMES[m],
+      month: m, category: 'Revenue', amount: rev * 1000, date: MONTH_NAMES[m] + ' 15', core: true });
+    catSplit.forEach(([cat, acct, frac]) => {
+      ledger.push({ row: row++, acct, label: cat + ' — ' + MONTH_NAMES[m],
+        month: m, category: cat, amount: -Math.round(monthlyExp[m] * 1000 * frac),
+        date: MONTH_NAMES[m] + ' 20', core: true });
+    });
+  });
+  // duplicate rent pair — exercises the one-to-one reconciliation matching
+  ledger.push({ row: row++, acct: '613', label: 'Office rent — annex', month: 6,
+    category: 'Rent & utilities', amount: -4500, date: 'Jul 12' });
+  ledger.push({ row: row++, acct: '613', label: 'Office rent — annex (duplicate?)', month: 6,
+    category: 'Rent & utilities', amount: -4500, date: 'Jul 12' });
+  // outliers — picked up by the z-score anomaly detector, not hardcoded flags
+  ledger.push({ row: row++, acct: '622', label: 'Consulting fee — Meridian', month: 5,
+    category: 'Other', amount: -48200, date: 'Jun 28' });
+  ledger.push({ row: row++, acct: '411', label: 'Refund issued — no invoice ref', month: 6,
+    category: 'Other', amount: -36500, date: 'Jul 3' });
+  ledger.push({ row: row++, acct: '512', label: 'Client payment — Nexa Corp', month: 6,
+    category: 'Revenue', amount: 12400, date: 'Jul 18' });
+
+  // bank statement = July ledger mirror, minus one rent of the duplicate pair
+  // and one uncleared check, plus a bank-only fee
+  const bank = [];
+  let brow = 2;
+  ledger.filter(e => e.month === 6).forEach(e => {
+    if (e.label === 'Office rent — annex (duplicate?)') return;   // only ONE rent hit the bank
+    bank.push({ row: brow++, ref: 'TRN-' + (1000 + brow), label: e.label,
+      amount: e.amount, date: e.date });
+  });
+  bank.push({ row: brow++, ref: 'FEE-0021', label: 'Bank fee — wire transfer',
+    amount: -46, date: 'Jul 11' });
+  return { ledger, bank };
+}
+
+/* ---------- engine (ported from ExcelAnalyzer, validated by test_analyzer.py) ---------- */
+const Engine = {
+  // financial summary of a numeric series
+  summary(values) {
+    const total = values.reduce((a, v) => a + v, 0);
+    const pos = values.filter(v => v > 0).reduce((a, v) => a + v, 0);
+    const neg = values.filter(v => v < 0).reduce((a, v) => a + v, 0);
+    return { total, count: values.length, average: total / (values.length || 1),
+      totalPositives: pos, totalNegatives: neg };
+  },
+
+  // breakdown by category
+  byCategory(entries) {
+    const cats = {};
+    entries.forEach(e => {
+      if (!cats[e.category]) cats[e.category] = { total: 0, count: 0 };
+      cats[e.category].total += e.amount;
+      cats[e.category].count += 1;
+    });
+    return cats;
+  },
+
+  // bank reconciliation: sorted two-pointer, every entry matched AT MOST once,
+  // so duplicate amounts reconcile one-to-one (the v1 double-match bug fix)
+  reconcile(entries1, entries2, tolerance) {
+    tolerance = tolerance == null ? 0.01 : tolerance;
+    const o1 = entries1.map((e, i) => i).sort((a, b) => entries1[a].amount - entries1[b].amount);
+    const o2 = entries2.map((e, i) => i).sort((a, b) => entries2[a].amount - entries2[b].amount);
+    const used1 = new Set(), used2 = new Set(), matched = [];
+    let i = 0, j = 0;
+    while (i < o1.length && j < o2.length) {
+      const v1 = entries1[o1[i]].amount, v2 = entries2[o2[j]].amount;
+      if (Math.abs(v1 - v2) <= tolerance) {
+        matched.push({ e1: entries1[o1[i]], e2: entries2[o2[j]] });
+        used1.add(o1[i]); used2.add(o2[j]); i++; j++;
+      } else if (v1 < v2) { i++; } else { j++; }
+    }
+    const unmatched1 = entries1.filter((_, k) => !used1.has(k));
+    const unmatched2 = entries2.filter((_, k) => !used2.has(k));
+    const total1 = entries1.reduce((a, e) => a + e.amount, 0);
+    const total2 = entries2.reduce((a, e) => a + e.amount, 0);
+    return { matched, unmatched1, unmatched2, total1, total2,
+      difference: total1 - total2,
+      matchRate: matched.length / Math.max(entries1.length, entries2.length, 1) * 100 };
+  },
+
+  // z-score anomaly detection (population std dev, like the desktop engine)
+  anomalies(entries, threshold) {
+    threshold = threshold == null ? 2.0 : threshold;
+    if (entries.length < 3) return [];
+    const nums = entries.map(e => e.amount);
+    const mean = nums.reduce((a, v) => a + v, 0) / nums.length;
+    const std = Math.sqrt(nums.reduce((a, v) => a + (v - mean) * (v - mean), 0) / nums.length);
+    if (std === 0) return [];
+    return entries
+      .map(e => ({ entry: e, z: Math.abs(e.amount - mean) / std }))
+      .filter(a => a.z > threshold)
+      .sort((a, b) => b.z - a.z);
+  },
+
+  // monthly time series (sorted chronologically)
+  timeSeries(entries) {
+    const rev = new Array(12).fill(0), exp = new Array(12).fill(0);
+    entries.forEach(e => {
+      if (e.amount >= 0) rev[e.month] += e.amount; else exp[e.month] += -e.amount;
+    });
+    return { rev, exp };
+  },
+
+  // least-squares slope of a series, as % of its mean per step
+  trendSlope(series) {
+    const n = series.length, xm = (n - 1) / 2;
+    const ym = series.reduce((a, v) => a + v, 0) / n;
+    let num = 0, den = 0;
+    series.forEach((v, x) => { num += (x - xm) * (v - ym); den += (x - xm) * (x - xm); });
+    return den ? (num / den) / ym * 100 : 0;
+  }
+};
+
+/* ---------- session autosave (mirrors SessionManager in the desktop app) ---------- */
+const SESSION_KEY = 'accounting-analyzer-mobile-session';
+function loadSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)) || null; }
+  catch (e) { return null; }
+}
+function saveSession(state) {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({
+      screen: state.screen, stmtTab: state.stmtTab, activeSheet: state.activeSheet,
+      reportOn: state.reportOn, savedAt: new Date().toISOString() }));
+  } catch (e) { /* storage unavailable — session just won't persist */ }
+}
+
+const DEMO = buildDemoData();
+
+class Component extends DCLogic {
+  state = Object.assign(
+    { screen: 'onboarding', stmtTab: 'pnl', activeSheet: 'General Ledger', reportDone: false,
+      reportOn: { summary: true, pnl: true, balance: true, breakdown: true, recon: false, anomalies: true } },
+    loadSession() || {});   // restore the autosaved session, like the desktop restore offer
+
+  go(screen) { this.setState({ screen, reportDone: false }); }
+
+  renderVals() {
+    const s = this.state;
+    const accent = this.props.accentColor ?? '#e94560';
+    const currency = this.props.currency ?? '€';
+    const fmt = (n) => (n < 0 ? '−' : '') + currency + Math.round(Math.abs(n)).toLocaleString('en-US');
+    const screen = s.screen;
+    const isApp = screen !== 'onboarding';
+    const headers = {
+      dashboard: ['SUMMIT LEDGER SARL', 'Dashboard'], import: ['WORKBOOK', 'Data & Import'],
+      statements: ['ANALYSIS', 'Financial Statements'], breakdown: ['ANALYSIS', 'Breakdown'],
+      recon: ['ANALYSIS', 'Reconciliation'], anomalies: ['ANALYSIS', 'Anomalies'],
+      trends: ['ANALYSIS', 'Trends'], report: ['EXPORT', 'PDF Report']
+    };
+    const hdr = headers[screen] || ['', ''];
+
+    /* ======== everything below is COMPUTED by the ported v2 engine ======== */
+    const ledger = DEMO.ledger, bank = DEMO.bank;
+
+    const sum = Engine.summary(ledger.map(e => e.amount));
+    const revenue = sum.totalPositives;
+    const expenses = -sum.totalNegatives;
+    const net = revenue - expenses;
+    const margin = revenue ? (revenue - expenses) / revenue * 100 : 0;
+
+    const catColors = { 'Payroll': '#e94560', 'COGS': '#6c5ce7', 'Rent & utilities': '#00b894',
+      'Marketing': '#fdcb6e', 'Other': '#74b9ff', 'Revenue': '#00b894' };
+    const catTotals = Engine.byCategory(ledger.filter(e => e.category !== 'Revenue'));
+    const cats = Object.keys(catTotals)
+      .map(name => ({ name, v: Math.abs(catTotals[name].total), color: catColors[name] || '#a29bfe' }))
+      .sort((a, b) => b.v - a.v);
+    const catTotal = cats.reduce((a, c) => a + c.v, 0);
+    let angle = -90;
+    const donutSegs = cats.map((c, i) => {
+      const frac = c.v / catTotal, sweep = frac * 360;
+      const a0 = angle * Math.PI / 180, a1 = (angle + sweep) * Math.PI / 180;
+      angle += sweep;
+      const large = sweep > 180 ? 1 : 0;
+      return React.createElement('path', { key: i, fill: c.color,
+        d: `M60,60 L${60 + 52 * Math.cos(a0)},${60 + 52 * Math.sin(a0)} A52,52 0 ${large} 1 ${60 + 52 * Math.cos(a1)},${60 + 52 * Math.sin(a1)} Z` });
+    });
+
+    // reconciliation: July ledger vs bank statement — note the duplicate rent
+    // pair matches only ONCE (v2 fix); the second stays in "Ledger only"
+    const julyLedger = ledger.filter(e => e.month === 6);
+    const recon = Engine.reconcile(julyLedger, bank);
+    const reconItems = recon.unmatched1.map(e => ({
+      label: e.label, side: 'Ledger only', date: e.date, amount: fmt(e.amount),
+      dotColor: e.label.indexOf('duplicate') >= 0 ? '#e94560' : '#fdcb6e' }))
+      .concat(recon.unmatched2.map(e => ({
+        label: e.label, side: 'Bank only', date: e.date, amount: fmt(e.amount),
+        dotColor: '#e17055' })));
+
+    // anomalies: real z-scores over the expense population (per-column scan,
+    // like the desktop app's Amount-column analysis)
+    const anomaliesRaw = Engine.anomalies(ledger.filter(e => e.amount < 0), 2.0);
+    const sevOf = (z) => z > 3.5 ? 'HIGH' : z > 2.5 ? 'MED' : 'LOW';
+    const sevStyle = {
+      HIGH: { border: 'rgba(233,69,96,.45)', badgeBg: 'rgba(233,69,96,.15)', badgeColor: '#e94560' },
+      MED: { border: 'rgba(253,203,110,.4)', badgeBg: 'rgba(253,203,110,.15)', badgeColor: '#fdcb6e' },
+      LOW: { border: '#2d3561', badgeBg: 'rgba(160,160,176,.15)', badgeColor: '#a0a0b0' } };
+    const anomalies = anomaliesRaw.slice(0, 5).map(a => {
+      const sev = sevOf(a.z);
+      return Object.assign({ severity: sev, row: a.entry.row, sigma: a.z.toFixed(1) + 'σ',
+        label: a.entry.label, date: a.entry.date, sheet: 'General Ledger',
+        amount: fmt(a.entry.amount) }, sevStyle[sev]);
+    });
+    const anomalyCount = anomaliesRaw.length;
+
+    // trends: monthly time series + least-squares slope + volatility
+    const ts = Engine.timeSeries(ledger.filter(e => e.core));   // regular monthly entries
+    const peak = Math.max.apply(null, ts.rev.concat(ts.exp));
+    const bestMonth = ts.rev.indexOf(Math.max.apply(null, ts.rev));
+    const avgRev = ts.rev.reduce((a, v) => a + v, 0) / 12;
+    const slope = Engine.trendSlope(ts.rev);
+    const revMean = avgRev;
+    const revStd = Math.sqrt(ts.rev.reduce((a, v) => a + (v - revMean) * (v - revMean), 0) / 12);
+    const volatility = revMean ? revStd / revMean * 100 : 0;
+
+    const stmtData = {
+      pnl: { title: 'Profit & Loss', lines: [
+        ['Revenue', 847200, 'h'], ['Cost of goods sold', -312400, 'n'], ['Gross profit', 534800, 's'],
+        ['Payroll & social charges', -218600, 'n'], ['Rent & utilities', -54200, 'n'], ['Marketing', -38900, 'n'],
+        ['Depreciation', -27300, 'n'], ['Operating income', 195800, 's'], ['Financial expense', -12400, 'n'],
+        ['Tax', -45900, 'n'], ['Net income', 137500, 't'] ] },
+      balance: { title: 'Balance Sheet', lines: [
+        ['Fixed assets', 402100, 'n'], ['Inventory', 96500, 'n'], ['Receivables', 148700, 'n'],
+        ['Cash & equivalents', 212300, 'n'], ['Total assets', 859600, 's'],
+        ['Equity', 421800, 'n'], ['Long-term debt', 240000, 'n'], ['Payables', 197800, 'n'],
+        ['Total liabilities & equity', 859600, 't'] ] },
+      cash: { title: 'Cash Flow', lines: [
+        ['Net income', 137500, 'h'], ['+ Depreciation', 27300, 'n'], ['Δ Working capital', -31200, 'n'],
+        ['Operating cash flow', 133600, 's'], ['Capex', -64500, 'n'], ['Investing cash flow', -64500, 's'],
+        ['Debt repayment', -40000, 'n'], ['Financing cash flow', -40000, 's'], ['Net change in cash', 29100, 't'] ] },
+      trial: { title: 'Trial Balance', lines: [
+        ['Class 1 — Capital', -421800, 'n'], ['Class 2 — Fixed assets', 402100, 'n'],
+        ['Class 3 — Inventory', 96500, 'n'], ['Class 4 — Third parties', -49100, 'n'],
+        ['Class 5 — Cash', 212300, 'n'], ['Class 6 — Expenses', 709700, 'n'],
+        ['Class 7 — Revenue', -949700, 'n'], ['Balance check', 0, 't'] ] },
+      tvm: { title: 'TVM — Loan analysis', lines: [
+        ['Principal', 240000, 'h'], ['Annual rate', 0, 'r4.2%'], ['Term', 0, 'r60 mo'],
+        ['Monthly payment', -4441, 'n'], ['Total interest', -26460, 'n'], ['NPV @ 5%', 218400, 's'],
+        ['Effective annual rate', 0, 'r4.28%'], ['Remaining balance', 198200, 't'] ] }
+    };
+    const cur = stmtData[s.stmtTab];
+    const stmtLines = cur.lines.map(([label, val, kind]) => {
+      const isTotal = kind === 't', isSub = kind === 's';
+      const rate = typeof kind === 'string' && kind[0] === 'r' ? kind.slice(1) : null;
+      return {
+        label, value: rate ? rate : fmt(val),
+        pad: isTotal ? '15px 16px' : '12px 16px',
+        size: isTotal ? '14px' : isSub ? '13px' : '12.5px',
+        weight: (isTotal || isSub) ? 800 : 500,
+        bg: isTotal ? 'rgba(233,69,96,.08)' : isSub ? 'rgba(255,255,255,.03)' : 'transparent',
+        labelColor: (isTotal || isSub) ? '#fff' : '#a0a0b0',
+        valColor: isTotal ? accent : rate ? '#fdcb6e' : val < 0 ? '#e17055' : '#00b894'
+      };
+    });
+    const tabs = [['pnl','P&L'],['balance','Balance'],['cash','Cash Flow'],['trial','Trial Bal.'],['tvm','TVM']];
+
+    const navDef = [['dashboard','⌂','Home'],['import','⊞','Data'],['statements','Σ','Analysis'],['trends','~','Trends'],['report','↧','Report']];
+    const navActive = { statements: 'statements', breakdown: 'statements', recon: 'statements', anomalies: 'statements' }[screen] || screen;
+
+    const rsDef = [
+      ['summary','Financial summary','KPIs, totals & ratios'], ['pnl','Profit & Loss','Full income statement'],
+      ['balance','Balance Sheet','Assets, liabilities & equity'], ['breakdown','Category breakdown','Donut + table'],
+      ['recon','Reconciliation','Unmatched items detail'],
+      ['anomalies','Anomaly log', anomalyCount + ' flagged entries']];
+    const onCount = rsDef.filter(([k]) => s.reportOn[k]).length;
+
+    // autosave the session on every render — mirrors the desktop 60s/on-action save
+    saveSession(s);
+
+    return {
+      isOnboarding: screen === 'onboarding', isApp,
+      isDashboard: screen === 'dashboard', isImport: screen === 'import', isStatements: screen === 'statements',
+      isBreakdown: screen === 'breakdown', isRecon: screen === 'recon', isAnomalies: screen === 'anomalies',
+      isTrends: screen === 'trends', isReport: screen === 'report',
+      showBack: !['dashboard','import','statements','trends','report','onboarding'].includes(screen),
+      headerKicker: hdr[0], headerTitle: hdr[1],
+      finishOnboarding: () => this.go('dashboard'),
+      goDashboard: () => this.go('dashboard'), goImport: () => this.go('import'),
+      goAnomalies: () => this.go('anomalies'), goData: () => this.go('import'),
+      onboardFeatures: [
+        { icon: 'Σ', bg: 'rgba(233,69,96,.8)', title: 'Any spreadsheet format', sub: 'xlsx, xlsm (macros analyzed, never run), xls, xml, csv, ods' },
+        { icon: '⇄', bg: 'rgba(83,52,131,.9)', title: 'Bank reconciliation', sub: 'One-to-one matching — duplicates never double-count' },
+        { icon: '!', bg: 'rgba(253,203,110,.85)', title: 'Anomaly detection', sub: 'Statistical outliers flagged automatically' }],
+      fileName: 'FY2025_ledger.xlsx',
+      fileMeta: '2 sheets · ' + (ledger.length + bank.length) + ' rows · session autosaved',
+      netResult: fmt(net), kpiRevenue: fmt(revenue), kpiExpenses: fmt(expenses),
+      kpiMargin: margin.toFixed(1) + '%',
+      anomalyCount,
+      tools: [
+        { icon: 'Σ', bg: 'rgba(233,69,96,.85)', title: 'Statements', sub: 'P&L · Balance · Cash flow', go: () => this.go('statements') },
+        { icon: '◔', bg: 'rgba(108,92,231,.85)', title: 'Breakdown', sub: 'By category & account', go: () => this.go('breakdown') },
+        { icon: '⇄', bg: 'rgba(0,184,148,.8)', title: 'Reconciliation', sub: 'Ledger vs bank', go: () => this.go('recon') },
+        { icon: '!', bg: 'rgba(253,203,110,.8)', title: 'Anomalies', sub: anomalyCount + ' flagged entries', go: () => this.go('anomalies') },
+        { icon: '~', bg: 'rgba(116,185,255,.8)', title: 'Trends', sub: 'Monthly time series', go: () => this.go('trends') },
+        { icon: '↧', bg: 'rgba(225,112,85,.8)', title: 'PDF Report', sub: 'Export full analysis', go: () => this.go('report') }],
+      recentTx: ledger.slice(-4).reverse().map(e => ({
+        acct: e.acct, label: e.label, date: e.date, journal: e.amount >= 0 ? 'BNK' : 'PUR',
+        amount: (e.amount >= 0 ? '+' : '−') + currency + Math.abs(e.amount).toLocaleString('en-US'),
+        color: e.amount >= 0 ? '#00b894' : '#e17055' })),
+      pickFile: () => {}, activeSheetName: s.activeSheet,
+      sheets: [
+        { name: 'General Ledger', rows: ledger.length, cols: 7 },
+        { name: 'Bank Statement', rows: bank.length, cols: 5 },
+        { name: 'Budget 2025', rows: 96, cols: 6 },
+        { name: 'Fixed Assets', rows: 58, cols: 6 }].map(sh => ({
+        name: sh.name, rows: sh.rows, cols: sh.cols,
+        active: sh.name === s.activeSheet,
+        rowBg: sh.name === s.activeSheet ? 'rgba(233,69,96,.06)' : 'transparent',
+        select: () => this.setState({ activeSheet: sh.name }) })),
+      previewRows: (s.activeSheet === 'Bank Statement' ? bank : ledger).slice(0, 6).map(e => ({
+        acct: e.acct || e.ref, label: e.label, amount: fmt(e.amount),
+        color: e.amount < 0 ? '#e17055' : '#00b894' })),
+      stmtTabs: tabs.map(([key, label]) => ({
+        label, select: () => this.setState({ stmtTab: key }),
+        bg: s.stmtTab === key ? accent : 'rgba(255,255,255,.04)',
+        border: s.stmtTab === key ? accent : '#2d3561',
+        color: s.stmtTab === key ? '#fff' : '#a0a0b0' })),
+      stmtTitle: cur.title, stmtLines,
+      ratios: [
+        { label: 'Net margin', value: margin.toFixed(1) + '%', color: margin >= 0 ? '#00b894' : '#e17055' },
+        { label: 'Expense ratio', value: revenue ? (expenses / revenue * 100).toFixed(1) + '%' : '—', color: '#fdcb6e' },
+        { label: 'Avg monthly rev', value: fmt(avgRev), color: '#00b894' },
+        { label: 'Entries', value: String(ledger.length), color: '#a0a0b0' }],
+      donutSegs, donutTotal: currency + Math.round(catTotal / 1000) + 'K',
+      categories: cats.map(c => ({ name: c.name, color: c.color, amount: fmt(c.v),
+        pct: Math.round(c.v / catTotal * 100) + '%' })),
+      reconLedger: fmt(recon.total1), reconBank: fmt(recon.total2),
+      reconDiff: fmt(recon.difference), reconRate: Math.round(recon.matchRate) + '%',
+      reconItems,
+      anomGaugeOffset: 151 - 151 * Math.min(1, anomalyCount / 14),
+      anomalies,
+      trendBars: ts.rev.map((r, m) => ({
+        rev: Math.round(r / peak * 78) + '%', exp: Math.round(ts.exp[m] / peak * 78) + '%' })),
+      trendLabels: MONTH_NAMES.map(l => ({ l: l[0] })),
+      trendStats: [
+        { label: 'Best month', value: MONTH_NAMES[bestMonth], sub: fmt(ts.rev[bestMonth]) + ' revenue', color: '#00b894' },
+        { label: 'Avg. monthly rev', value: fmt(avgRev), sub: '12-month mean', color: '#fff' },
+        { label: 'Trend slope', value: (slope >= 0 ? '+' : '') + slope.toFixed(1) + '%', sub: 'per month, linear fit', color: slope >= 0 ? '#00b894' : '#e17055' },
+        { label: 'Volatility', value: '±' + volatility.toFixed(1) + '%', sub: 'std dev of monthly rev', color: '#fdcb6e' }],
+      reportSections: rsDef.map(([key, title, sub]) => ({
+        title, sub, on: s.reportOn[key],
+        boxBg: s.reportOn[key] ? accent : 'transparent', boxBorder: s.reportOn[key] ? accent : '#2d3561',
+        toggle: () => this.setState(st => ({ reportOn: { ...st.reportOn, [key]: !st.reportOn[key] }, reportDone: false })) })),
+      reportName: 'Analysis_Report_FY2025.pdf',
+      reportMeta: onCount + ' sections · A4 · charts embedded',
+      reportDone: s.reportDone, generateLabel: s.reportDone ? 'Regenerate PDF' : 'Generate PDF report',
+      generateReport: () => this.setState({ reportDone: true }),
+      navItems: navDef.map(([key, icon, label]) => ({
+        icon, label, go: () => this.go(key),
+        color: navActive === key ? accent : '#6b6b80',
+        pillBg: navActive === key ? 'rgba(233,69,96,.15)' : 'transparent' }))
+    };
+  }
+}
+</script>
+</body>
+</html>
