@@ -1,20 +1,33 @@
 #!/usr/bin/env python3
 """
-Extract the libraries a PowerShell code base depends on.
+Extract the libraries a PowerShell, VBScript or VBA code base depends on.
 
-The script walks ``*.ps1``, ``*.psm1`` and ``*.psd1`` files and reports every
-dependency declaration it can find:
+The script walks ``*.ps1``, ``*.psm1``, ``*.psd1`` and the Basic sources
+``*.vbs``, ``*.bas``, ``*.cls``, ``*.frm``, and reports every dependency it can
+find:
 
 kind      | recovered from
 --------- | ----------------------------------------------------------------
 module    | ``#requires -Modules``, ``using module``, ``Import-Module``,
           | ``Install-Module``, ``Save-Module``, manifest ``RequiredModules``,
-          | ``NestedModules``, ``RootModule``
-namespace | ``using namespace``
+          | ``NestedModules``, ``RootModule``, and cmdlets that give a module
+          | away, such as ``Export-Excel`` meaning ``ImportExcel``
+namespace | ``using namespace``, ``New-Object System.Xml.XmlDocument``,
+          | ``[System.Data.DataTable]``, the ``[xml]`` accelerator
 assembly  | ``using assembly``, ``Add-Type -AssemblyName|-Path``,
           | ``[Reflection.Assembly]::Load*``, manifest ``RequiredAssemblies``
+com       | ``New-Object -ComObject Excel.Application``, VBA and VBScript
+          | ``CreateObject``/``GetObject``, early binding (``As Excel.Range``),
+          | and the provider named in a connection string
 snapin    | ``#requires -PSSnapin``, ``Add-PSSnapin``
-native    | ``[DllImport("kernel32.dll")]`` inside inline C#
+native    | ``[DllImport("kernel32.dll")]``, VBA ``Declare ... Lib "kernel32"``
+macro     | ``Application.Run``, ``RunAutoMacros``, ``VBProject``, and the
+          | macro-enabled workbooks (``.xlsm``, ``.xlam``) a script opens
+
+Every name is then placed in a domain (excel, vba, xml, office, data) and given
+an offline cost (builtin, office, external, local), so a report says what has to
+be staged before the code runs on a machine with no internet.  The tables that
+drive that live in powershell_library_domains.py and are meant to be edited.
 
 Comments and string literals are tracked, so a command name inside a comment or
 a message string is not mistaken for a real dependency.  References whose value
@@ -24,6 +37,7 @@ statically: they are counted, and only listed with ``--include-dynamic``.
 Usage:
     python extract_powershell_libraries.py PATH [PATH ...]
     python extract_powershell_libraries.py repo --details
+    python extract_powershell_libraries.py repo --domains excel,vba,xml
     python extract_powershell_libraries.py repo --format json > libraries.json
 """
 
@@ -34,18 +48,40 @@ import csv
 import dataclasses
 import io
 import json
+import os
 import re
 import sys
 from collections import Counter
 from collections.abc import Iterator
 from pathlib import Path
 
+try:
+    from .powershell_library_domains import (
+        AVAILABILITIES,
+        CMDLET_MODULES,
+        DOMAINS,
+        MACRO_INDICATORS,
+        STAGING_ADVICE,
+        classify,
+    )
+except ImportError:  # running the file directly instead of as a package
+    from powershell_library_domains import (  # type: ignore[no-redef]
+        AVAILABILITIES,
+        CMDLET_MODULES,
+        DOMAINS,
+        MACRO_INDICATORS,
+        STAGING_ADVICE,
+        classify,
+    )
+
 CODE = "c"
 STRING = "s"
 COMMENT = "#"
 
-DEFAULT_SUFFIXES = (".ps1", ".psm1", ".psd1")
-KIND_ORDER = ("module", "namespace", "assembly", "snapin", "native")
+POWERSHELL_SUFFIXES = (".ps1", ".psm1", ".psd1")
+BASIC_SUFFIXES = (".vbs", ".vba", ".bas", ".cls", ".frm")  # VBScript and VBA
+DEFAULT_SUFFIXES = POWERSHELL_SUFFIXES + BASIC_SUFFIXES
+KIND_ORDER = ("module", "namespace", "assembly", "com", "snapin", "native", "macro")
 
 # Parameters of a command that carry a library name; "" is the first positional.
 MODULE_PARAMETERS = {
@@ -145,6 +181,38 @@ MANIFEST_KEY_RE = re.compile(
 HASHTABLE_NAME_RE = re.compile(
     r"ModuleName[ \t]*=[ \t]*(?P<quote>[\"'])(?P<name>[^\"']+)(?P=quote)", re.IGNORECASE
 )
+NEW_OBJECT_RE = re.compile(r"(?<![\w.`-])New-Object(?![\w-])", re.IGNORECASE)
+NEW_OBJECT_PARAMETERS = {
+    "comobject": "com",
+    "typename": "type",
+    "": "type",
+}
+TYPE_LITERAL_RE = re.compile(r"\[\s*(?P<type>(?:[A-Za-z_]\w*\.){1,6}[A-Za-z_]\w*)\s*\]")
+XML_ACCELERATOR_RE = re.compile(r"\[\s*xml\s*\]", re.IGNORECASE)
+CMDLET_RE = re.compile(
+    r"(?<![\w.`-])(" + "|".join(sorted(CMDLET_MODULES)) + r")(?![\w-])",
+    re.IGNORECASE,
+)
+MACRO_RES = tuple(
+    (re.compile(pattern, re.IGNORECASE), label) for pattern, label in MACRO_INDICATORS
+)
+# VBScript and VBA, where a library is named by CreateObject, by a Declare
+# statement or by an early bound type such as `Dim ws As Excel.Worksheet`.
+CREATE_OBJECT_RE = re.compile(
+    r"\b(?:Server\.)?CreateObject\s*\(\s*\"(?P<progid>[^\"]+)\"", re.IGNORECASE
+)
+GET_OBJECT_RE = re.compile(
+    r"\bGetObject\s*\(\s*(?:[^,()]*,)?\s*\"(?P<progid>[^\"]+)\"", re.IGNORECASE
+)
+DECLARE_LIB_RE = re.compile(
+    r"\bDeclare\b[^\n]*?\bLib\s+\"(?P<lib>[^\"]+)\"", re.IGNORECASE
+)
+BASIC_TYPE_RE = re.compile(
+    r"\b(?:As|New)\s+(?P<type>[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+)", re.IGNORECASE
+)
+# A connection string names the data provider a finance script leans on.
+OLEDB_PROVIDER_RE = re.compile(r"\bProvider\s*=\s*(?P<provider>[\w.]+)", re.IGNORECASE)
+ODBC_DRIVER_RE = re.compile(r"\bDriver\s*=\s*\{(?P<provider>[^}]+)\}", re.IGNORECASE)
 FILE_LITERAL_RE = re.compile(
     r"[\"'][^\"']*?([^\"'/\\]+\.(?:psm1|psd1|ps1|dll))[\"']", re.IGNORECASE
 )
@@ -159,6 +227,8 @@ class Reference:
     origin: str
     line: int
     dynamic: bool
+    domain: str = ""
+    availability: str = ""
     path: str = ""
 
 
@@ -489,10 +559,21 @@ def _record(
     source: str,
     index: int,
 ) -> None:
-    """Normalize one token and append it to the result list."""
+    """Normalize one token, classify it and append it to the result list."""
     hashtable = HASHTABLE_NAME_RE.search(token)
     name, dynamic = normalize_name(hashtable.group("name") if hashtable else token)
-    found.append(Reference(kind, name, origin, line_of(source, index), dynamic))
+    domain, availability = classify(name, kind)
+    found.append(
+        Reference(
+            kind=kind,
+            name=name,
+            origin=origin,
+            line=line_of(source, index),
+            dynamic=dynamic,
+            domain=domain,
+            availability=availability,
+        )
+    )
 
 
 def scan_requires(source: str, mask: str, found: list[Reference]) -> None:
@@ -565,19 +646,199 @@ def scan_manifest_keys(source: str, mask: str, found: list[Reference]) -> None:
             _record(found, kind, entry, origin, source, match.start("key"))
 
 
-SCANNERS = (
+def _record_type(
+    found: list[Reference], type_name: str, origin: str, source: str, index: int
+) -> None:
+    """Record the namespace of a .NET type, but only for a tracked domain."""
+    namespace = strip_quotes(type_name).rsplit(".", 1)[0]
+    if "." not in namespace and not classify(namespace, "namespace")[0]:
+        return
+    if classify(namespace, "namespace")[0]:
+        _record(found, "namespace", namespace, origin, source, index)
+
+
+def scan_com_objects(source: str, mask: str, found: list[Reference]) -> None:
+    """Handle ``New-Object -ComObject Excel.Application`` and typed New-Object."""
+    for match in NEW_OBJECT_RE.finditer(source):
+        if mask[match.start()] != CODE:
+            continue
+        tokens = split_arguments(*argument_segment(source, mask, match.end()))
+        for kind, token in collect_values(tokens, NEW_OBJECT_PARAMETERS):
+            if kind == "com":
+                origin = "New-Object -ComObject"
+                _record(found, "com", token, origin, source, match.start())
+            else:
+                _record_type(found, token, "New-Object", source, match.start())
+
+
+def scan_domain_types(source: str, mask: str, found: list[Reference]) -> None:
+    """Handle ``[System.Xml.XmlDocument]`` and the ``[xml]`` accelerator."""
+    for match in TYPE_LITERAL_RE.finditer(source):
+        if mask[match.start()] == CODE:
+            _record_type(found, match.group("type"), "[type]", source, match.start())
+    for match in XML_ACCELERATOR_RE.finditer(source):
+        if mask[match.start()] == CODE:
+            _record(found, "namespace", "System.Xml", "[xml]", source, match.start())
+
+
+def scan_cmdlets(source: str, mask: str, found: list[Reference]) -> None:
+    """Infer the module behind a cmdlet: ``Export-Excel`` means ``ImportExcel``."""
+    for match in CMDLET_RE.finditer(source):
+        if mask[match.start()] != CODE:
+            continue
+        module = CMDLET_MODULES[match.group(1).casefold()]
+        _record(found, "module", module, match.group(1), source, match.start())
+
+
+def scan_macro_indicators(source: str, mask: str, found: list[Reference]) -> None:
+    """Record the signs that code drives macros, not just reads a workbook."""
+    for pattern, label in MACRO_RES:
+        for match in pattern.finditer(source):
+            if mask[match.start()] == COMMENT:
+                continue
+            name = label or match.group(0)
+            origin = "VBA API" if label else "macro-enabled file"
+            _record(found, "macro", name, origin, source, match.start())
+
+
+def scan_connection_strings(source: str, mask: str, found: list[Reference]) -> None:
+    """Handle ``Provider=Microsoft.ACE.OLEDB.12.0`` and ODBC driver names."""
+    for pattern in (OLEDB_PROVIDER_RE, ODBC_DRIVER_RE):
+        for match in pattern.finditer(source):
+            if mask[match.start()] == COMMENT:
+                continue
+            provider = match.group("provider")
+            _record(found, "com", provider, "connection string", source, match.start())
+
+
+def scan_basic_objects(source: str, mask: str, found: list[Reference]) -> None:
+    """Handle ``CreateObject("Excel.Application")`` in VBScript and VBA."""
+    for pattern, origin in (
+        (CREATE_OBJECT_RE, "CreateObject"),
+        (GET_OBJECT_RE, "GetObject"),
+    ):
+        for match in pattern.finditer(source):
+            if mask[match.start()] == CODE:
+                _record(
+                    found, "com", match.group("progid"), origin, source, match.start()
+                )
+
+
+def scan_basic_declares(source: str, mask: str, found: list[Reference]) -> None:
+    """Handle ``Declare PtrSafe Function GetTickCount Lib "kernel32" ()``."""
+    for match in DECLARE_LIB_RE.finditer(source):
+        if mask[match.start()] == CODE:
+            _record(
+                found,
+                "native",
+                match.group("lib"),
+                "Declare Lib",
+                source,
+                match.start(),
+            )
+
+
+def scan_basic_types(source: str, mask: str, found: list[Reference]) -> None:
+    """Handle early binding: ``Dim ws As Excel.Worksheet``."""
+    for match in BASIC_TYPE_RE.finditer(source):
+        if mask[match.start()] == CODE:
+            _record(
+                found,
+                "com",
+                match.group("type"),
+                "early binding",
+                source,
+                match.start(),
+            )
+
+
+def classify_characters_basic(source: str) -> str:
+    """
+    The same mask for VBScript and VBA, where a comment starts at ``'`` or
+    ``REM`` and a doubled quote escapes a quote inside a string.
+
+    >>> classify_characters_basic("a = 1 ' note")
+    'cccccc######'
+    >>> classify_characters_basic('Set a = "x"" y" REM note')
+    'ccccccccsssssssc########'
+    """
+    mask: list[str] = []
+    index, length = 0, len(source)
+    while index < length:
+        start, char = index, source[index]
+        is_rem = source[index : index + 3].casefold() == "rem" and _starts_token(
+            source, index
+        )
+        if char == "'" or (is_rem and source[index + 3 : index + 4] in (" ", "\t", "")):
+            end = source.find("\n", index)
+            index = length if end < 0 else end
+            mask.append(COMMENT * (index - start))
+        elif char == '"':
+            index = _skip_basic_string(source, index)
+            mask.append(STRING * (index - start))
+        else:
+            mask.append(CODE)
+            index += 1
+    return "".join(mask)
+
+
+def _skip_basic_string(source: str, index: int) -> int:
+    """Return the index just past a Basic string, which ends at the line break."""
+    length = len(source)
+    index += 1
+    while index < length:
+        char = source[index]
+        if char == "\n":
+            return index
+        if char == '"':
+            if source[index + 1 : index + 2] == '"':
+                index += 2
+                continue
+            return index + 1
+        index += 1
+    return length
+
+
+POWERSHELL_SCANNERS = (
     scan_requires,
     scan_using,
     scan_commands,
     scan_assembly_loads,
     scan_dll_imports,
     scan_manifest_keys,
+    scan_com_objects,
+    scan_domain_types,
+    scan_cmdlets,
+    scan_macro_indicators,
+    scan_connection_strings,
 )
+BASIC_SCANNERS = (
+    scan_basic_objects,
+    scan_basic_declares,
+    scan_basic_types,
+    scan_macro_indicators,
+    scan_connection_strings,
+)
+LANGUAGES = {
+    "powershell": (classify_characters, POWERSHELL_SCANNERS),
+    "basic": (classify_characters_basic, BASIC_SCANNERS),
+}
 
 
-def extract_references(source: str, path: str = "") -> list[Reference]:
+def language_of(path: str) -> str:
     """
-    Extract every library reference from one PowerShell source text.
+    >>> language_of("tools/build.psm1"), language_of("Macros/Ledger.bas")
+    ('powershell', 'basic')
+    """
+    return "basic" if Path(path).suffix.casefold() in BASIC_SUFFIXES else "powershell"
+
+
+def extract_references(
+    source: str, path: str = "", language: str = ""
+) -> list[Reference]:
+    """
+    Extract every library reference from one source text.  The language is
+    taken from the file name unless it is given.
 
     >>> source = '''
     ... #Requires -Modules Pester, @{ModuleName='PSReadLine';ModuleVersion='2.0'}
@@ -594,10 +855,16 @@ def extract_references(source: str, path: str = "") -> list[Reference]:
     namespace | System.Text | using namespace
     module | Microsoft.PowerShell.Archive | Import-Module
     assembly | System.Windows.Forms | Add-Type
+
+    >>> vba = 'Dim book As Excel.Workbook'
+    >>> [(r.kind, r.name, r.domain, r.availability) for r in
+    ...  extract_references(vba, "Ledger.bas")]
+    [('com', 'Excel.Workbook', 'excel', 'office')]
     """
-    mask = classify_characters(source)
+    mask_of, scanners = LANGUAGES[language or language_of(path)]
+    mask = mask_of(source)
     found: list[Reference] = []
-    for scanner in SCANNERS:
+    for scanner in scanners:
         scanner(source, mask, found)
     found.sort(
         key=lambda reference: (
@@ -673,11 +940,11 @@ def report_text(groups: Groups, details: bool = False) -> str:
     """
     Render the grouped references as a plain text report.
 
-    >>> references = extract_references("Import-Module Pester", "a.ps1")
+    >>> references = extract_references("Import-Module ImportExcel", "a.ps1")
     >>> print(report_text(group_references(references)))
     <BLANKLINE>
     module (1)
-      Pester                                         1  Import-Module
+      ImportExcel                              1  excel   external  Import-Module
     """
     per_kind = Counter(kind for kind, _ in groups)
     lines: list[str] = []
@@ -686,10 +953,41 @@ def report_text(groups: Groups, details: bool = False) -> str:
         if kind != current_kind:
             current_kind = kind
             lines.append(f"\n{kind} ({per_kind[kind]})")
+        first = references[0]
         origins = ", ".join(sorted({reference.origin for reference in references}))
-        lines.append(f"  {references[0].name:<44} {len(references):>3}  {origins}")
+        lines.append(
+            f"  {first.name:<38} {len(references):>3}  "
+            f"{first.domain or '-':<7} {first.availability:<9} {origins}"
+        )
         if details:
             lines.extend(f"      {ref.path}:{ref.line}" for ref in references)
+    return "\n".join(lines)
+
+
+def report_staging(groups: Groups) -> str:
+    """
+    Say what it takes to run the scanned code on a machine with no internet.
+
+    >>> code = "Import-Module ImportExcel; [xml]$x = Get-Content f.xml"
+    >>> print(report_staging(group_references(extract_references(code))))
+    <BLANKLINE>
+    offline readiness
+      builtin     1  ships with Windows, .NET or PowerShell
+      external    1  stage it first: Save-Module / nuget install on a connected box
+          ImportExcel
+    """
+    names: dict[str, set[str]] = {}
+    for references in groups.values():
+        names.setdefault(references[0].availability, set()).add(references[0].name)
+    lines = ["\noffline readiness"]
+    for availability in AVAILABILITIES:
+        found = names.get(availability)
+        if not found:
+            continue
+        advice = STAGING_ADVICE[availability]
+        lines.append(f"  {availability:<10} {len(found):>2}  {advice}")
+        if availability in {"external", "office", "unknown"}:
+            lines.append(f"      {', '.join(sorted(found))}")
     return "\n".join(lines)
 
 
@@ -699,6 +997,8 @@ def report_json(groups: Groups) -> str:
         {
             "kind": kind,
             "name": references[0].name,
+            "domain": references[0].domain,
+            "availability": references[0].availability,
             "dynamic": references[0].dynamic,
             "count": len(references),
             "origins": sorted({reference.origin for reference in references}),
@@ -717,17 +1017,30 @@ def report_csv(groups: Groups) -> str:
     Render the grouped references as CSV.
 
     >>> print(report_csv(group_references(extract_references("using module Foo"))))
-    kind,name,dynamic,count,origins,files
-    module,Foo,false,1,using module,1
+    kind,name,domain,availability,dynamic,count,origins,files
+    module,Foo,,external,false,1,using module,1
     """
     buffer = io.StringIO()
     writer = csv.writer(buffer, lineterminator="\n")
-    writer.writerow(["kind", "name", "dynamic", "count", "origins", "files"])
+    writer.writerow(
+        [
+            "kind",
+            "name",
+            "domain",
+            "availability",
+            "dynamic",
+            "count",
+            "origins",
+            "files",
+        ]
+    )
     for (kind, _), references in groups.items():
         writer.writerow(
             [
                 kind,
                 references[0].name,
+                references[0].domain,
+                references[0].availability,
                 str(references[0].dynamic).lower(),
                 len(references),
                 ";".join(sorted({reference.origin for reference in references})),
@@ -758,6 +1071,11 @@ def parse_arguments(argv: list[str] | None = None) -> argparse.Namespace:
         "--kinds", default="", help=f"comma separated subset of {','.join(KIND_ORDER)}"
     )
     parser.add_argument(
+        "--domains",
+        default="",
+        help=f"keep only these domains: {','.join(DOMAINS)}",
+    )
+    parser.add_argument(
         "--suffixes",
         default=",".join(DEFAULT_SUFFIXES),
         help="comma separated file suffixes to scan",
@@ -782,6 +1100,11 @@ def main(argv: list[str] | None = None) -> int:
     if arguments.kinds:
         wanted = {kind.strip().casefold() for kind in arguments.kinds.split(",")}
         references = [reference for reference in references if reference.kind in wanted]
+    if arguments.domains:
+        domains = {domain.strip().casefold() for domain in arguments.domains.split(",")}
+        references = [
+            reference for reference in references if reference.domain in domains
+        ]
     groups = group_references(references)
     if arguments.output == "json":
         print(report_json(groups))
@@ -796,8 +1119,13 @@ def main(argv: list[str] | None = None) -> int:
     print(f"{sum(scanned.values())} files scanned ({by_suffix})")
     print(f"{len(references)} references, {len(groups)} distinct libraries{skipped}")
     print(report_text(groups, arguments.details))
+    print(report_staging(groups))
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except BrokenPipeError:  # a pager or `head` closed the pipe
+        os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        raise SystemExit(1)
